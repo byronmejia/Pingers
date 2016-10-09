@@ -15,8 +15,8 @@ int getDevicePingsOnDate(struct http_request *);
 int postDevicePing(struct http_request *);
 
 int init(int state) {
-	kore_pgsql_register("db", "host=/tmp dbname=pingers");
-	return (KORE_RESULT_OK);
+  kore_pgsql_register("db", "host=/tmp dbname=pingers");
+  return (KORE_RESULT_OK);
 }
 
 
@@ -34,38 +34,42 @@ int clearData(struct http_request *req) {
 
 int getAllDevices(struct http_request *req) {
   struct kore_pgsql	sql;
-  char *name;
   int rows, i;
-
-  kore_log(LOG_NOTICE, json_dumps(json_pack("{}"), JSON_COMPACT));
+  json_t *output = json_array();
+  json_t *temp;
+  char *solution;
 
   /* Start Postres */
-
   req->status = HTTP_STATUS_INTERNAL_ERROR;
 
+  /* Escape on database error */
   if (!kore_pgsql_query_init(&sql, NULL, "db", KORE_PGSQL_SYNC)) {
     kore_pgsql_logerror(&sql);
     goto out;
   }
-
+  
+  /* Escape on SQL Error */
   if (!kore_pgsql_query(&sql, "SELECT * FROM device")) {
     kore_pgsql_logerror(&sql);
     goto out;
   }
 
+  /* Generate the JSON Array */
   rows = kore_pgsql_ntuples(&sql);
   for (i = 0; i < rows; i++) {
-    name = kore_pgsql_getvalue(&sql, i, 0);
-    kore_log(LOG_NOTICE, "name: '%s'", name);
+    temp = json_string(kore_pgsql_getvalue(&sql, i, 0));
+    json_array_append(output, temp);
   }
 
+  /* If we hit this, we're okay! */
   req->status = HTTP_STATUS_OK;
 
   out:
   kore_pgsql_cleanup(&sql);
 
-  char *response = "Hello All Devices";
-  http_response(req, req->status, response, strlen(response));
+  solution = json_dumps(output, JSON_COMPACT);
+
+  http_response(req, req->status, solution, strlen(solution));
   return (KORE_RESULT_OK);
 }
 
