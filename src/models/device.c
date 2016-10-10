@@ -11,7 +11,6 @@ json_t *device_get_all(void) {
     return NULL;
   }
   
-  /* Escape on SQL Error */
   if (!kore_pgsql_query(&sql, "SELECT * FROM device")) {
     kore_pgsql_logerror(&sql);
     kore_pgsql_cleanup(&sql);
@@ -25,6 +24,49 @@ json_t *device_get_all(void) {
   for (i = 0; i < rows; i++) {
     device_name = json_string(kore_pgsql_getvalue(&sql, i, 0));
     json_array_append(output, device_name);
+  }
+
+  kore_pgsql_cleanup(&sql);
+  return output;
+}
+
+json_t *device_pings_between(char* device_uuid, char* start, char* end) {
+  json_t *output = json_array();
+  struct kore_pgsql	sql;
+
+  /* Escape on database error */
+  if (!kore_pgsql_query_init(&sql, NULL, "db", KORE_PGSQL_SYNC)) {
+    kore_pgsql_logerror(&sql);
+    kore_pgsql_cleanup(&sql);
+    return NULL;
+  }
+
+  /* Escape on SQL Error */
+  char queryBuilder[200];
+  sprintf(queryBuilder, 
+  "\
+  SELECT EXTRACT(epoch FROM time) \
+  FROM ping \
+  WHERE device_id = '%s' \
+  AND time >= to_timestamp(%s) \
+  AND time < to_timestamp(%s)\
+  ", device_uuid, start, end);
+
+  kore_log(LOG_NOTICE, "QUERY: %s", queryBuilder);
+
+  if (!kore_pgsql_query(&sql, queryBuilder)) {
+    kore_pgsql_logerror(&sql);
+    kore_pgsql_cleanup(&sql);
+    return NULL;
+  }
+
+  int rows, i;
+  json_t *epochs;
+  rows = kore_pgsql_ntuples(&sql);
+
+  for (i = 0; i < rows; i++) {
+    epochs = json_string(kore_pgsql_getvalue(&sql, i, 0));
+    json_array_append(output, epochs);
   }
 
   kore_pgsql_cleanup(&sql);

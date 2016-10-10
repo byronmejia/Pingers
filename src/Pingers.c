@@ -4,6 +4,7 @@
 #include <kore/http.h>
 #include <kore/pgsql.h>
 #include "models/device.h"
+#include "helpers/helpers.h"
 
 int init(int);
 int page(struct http_request *);
@@ -75,8 +76,40 @@ int get_device_pings_between(struct http_request *req) {
 }
 
 int get_device_pings_on_date(struct http_request *req) {
-  char *response = "Hello Device Pings on Date";
-  http_response(req, 200, response, strlen(response));
+  kore_log(LOG_NOTICE, "PATH: %s", req->path);
+
+  char * uuid;
+  char * date;
+  char * solution;
+  const char s[2] = "/";
+
+  uuid = strtok(req->path, s);
+  date = strtok(NULL, s);
+
+  char epochs[20];
+  char end_epochs[20];
+
+  iso_to_str(date, epochs);
+
+  long end_date = atol(epochs) + 86400;
+
+  sprintf(end_epochs, "%ld", end_date);
+
+  kore_log(LOG_NOTICE, "UUID:    %s", uuid);
+  kore_log(LOG_NOTICE, "DATE:    %s", date);
+  kore_log(LOG_NOTICE, "EPOCH_S: %s", epochs);
+  kore_log(LOG_NOTICE, "EPOCH_E: %s", end_epochs);
+
+  json_t *output = device_pings_between(uuid, epochs, end_epochs);
+  if(output == NULL) {
+    req->status = HTTP_STATUS_INTERNAL_ERROR;
+  } else {
+    req->status = HTTP_STATUS_OK; 
+  }
+
+  solution = json_dumps(output, JSON_COMPACT);
+
+  http_response(req, req->status, solution, strlen(solution));
   return (KORE_RESULT_OK);
 }
 
