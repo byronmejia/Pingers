@@ -14,6 +14,7 @@ int get_all_pings_on_date(struct http_request *);
 int get_device_pings_between(struct http_request *);
 int get_device_pings_on_date(struct http_request *);
 int post_device_ping(struct http_request *);
+int truncate_database(void);
 
 int init(int state) {
   kore_pgsql_register("db", "host=/tmp dbname=pingers");
@@ -28,9 +29,15 @@ int page(struct http_request *req) {
 }
 
 int clear_data(struct http_request *req) {
-  char *response = "Hello Clear Data";
-  http_response(req, 200, response, strlen(response));
-  return (KORE_RESULT_OK);
+  if(truncate_database() == 0) {
+    char *response = "Data Cleared";
+    http_response(req, 200, response, strlen(response));
+    return (KORE_RESULT_OK);
+  } else {
+    char *response = "Error";
+    http_response(req, 500, response, strlen(response));
+    return (KORE_RESULT_OK);
+  }
 }
 
 int get_all_devices(struct http_request *req) {
@@ -80,3 +87,23 @@ int post_device_ping(struct http_request *req) {
   return (KORE_RESULT_OK);
 }
 
+int truncate_database(){
+  struct kore_pgsql sql;
+  
+  /* Escape on database error */
+  if (!kore_pgsql_query_init(&sql, NULL, "db", KORE_PGSQL_SYNC)) {
+    kore_pgsql_logerror(&sql);
+    kore_pgsql_cleanup(&sql);
+    return -1;
+  }
+
+  /* Escape on SQL Error */
+  if (!kore_pgsql_query(&sql, "TRUNCATE device, ping")) {
+    kore_pgsql_logerror(&sql);
+    kore_pgsql_cleanup(&sql);
+    return -1;
+  }
+
+  kore_pgsql_cleanup(&sql);
+  return 0;
+}
