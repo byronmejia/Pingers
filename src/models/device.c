@@ -61,7 +61,7 @@ int device_insert(char* device_uuid, char* ping){
      }
      return device_insert(device_uuid, ping);
   }
-  
+
   char insertQuery[150];
   sprintf(insertQuery, "INSERT INTO ping (time, device_id) VALUES (to_timestamp(%s), '%s')", ping, device_uuid);
   if (!kore_pgsql_query(&sql, insertQuery)) {
