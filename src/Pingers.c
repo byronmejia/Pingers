@@ -36,8 +36,6 @@ int clearData(struct http_request *req) {
 int getAllDevices(struct http_request *req) {
   char *solution;
 
-  /* Start Postres */
-
   json_t *output = device_get_all();
 
   if(output == NULL) {
