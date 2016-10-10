@@ -21,7 +21,6 @@ int init(int state) {
   return (KORE_RESULT_OK);
 }
 
-
 int page(struct http_request *req) {
   char *response = "Hello homepage";
   http_response(req, 200, response, strlen(response));
@@ -29,15 +28,15 @@ int page(struct http_request *req) {
 }
 
 int clear_data(struct http_request *req) {
-  if(truncate_database() == 0) {
-    char *response = "Data Cleared";
-    http_response(req, 200, response, strlen(response));
-    return (KORE_RESULT_OK);
-  } else {
+  if(truncate_database() != 0) {
     char *response = "Error";
     http_response(req, 500, response, strlen(response));
     return (KORE_RESULT_OK);
   }
+
+  char *response = "Success";
+  http_response(req, 200, response, strlen(response));
+  return (KORE_RESULT_OK);
 }
 
 int get_all_devices(struct http_request *req) {
@@ -82,7 +81,31 @@ int get_device_pings_on_date(struct http_request *req) {
 }
 
 int post_device_ping(struct http_request *req) {
-  char *response = "Hello Post Device Pinga";
+  if (req->method != HTTP_METHOD_POST) {
+    char* response = "Not Found";
+    http_response(req, 400, response, strlen(response));
+    return (KORE_RESULT_OK);
+  }
+
+  kore_log(LOG_NOTICE, "PATH: %s", req->path);
+
+  char * uuid;
+  char * ping;
+  const char s[2] = "/";
+
+  uuid = strtok(req->path, s);
+  ping = strtok(NULL, s);
+
+  kore_log(LOG_NOTICE, "UUID: %s", uuid);
+  kore_log(LOG_NOTICE, "PING: %s", ping);
+
+  if (device_insert(uuid, ping) != 0) {
+    char* response = "Error";
+    http_response(req, 500, response, strlen(response));
+    return (KORE_RESULT_OK);
+  }
+
+  char *response = "Success";
   http_response(req, 200, response, strlen(response));
   return (KORE_RESULT_OK);
 }

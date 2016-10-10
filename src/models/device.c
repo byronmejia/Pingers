@@ -30,3 +30,71 @@ json_t *device_get_all(void) {
   kore_pgsql_cleanup(&sql);
   return output;
 }
+
+int device_insert(char* device_uuid, char* ping){
+  struct kore_pgsql	sql;
+
+  /* Escape on database error */
+  if (!kore_pgsql_query_init(&sql, NULL, "db", KORE_PGSQL_SYNC)) {
+    kore_pgsql_logerror(&sql);
+    kore_pgsql_cleanup(&sql);
+    return -1;
+  }
+
+  /* Escape on SQL Error */
+  char queryBuilder[80];
+  sprintf(queryBuilder, "SELECT id FROM device WHERE id = '%s'", device_uuid);
+  kore_log(LOG_NOTICE, "Query: %s", queryBuilder);
+
+  if (!kore_pgsql_query(&sql, queryBuilder)) {
+    kore_pgsql_logerror(&sql);
+    kore_pgsql_cleanup(&sql);
+    return -1;
+  }
+
+  kore_log(LOG_NOTICE, "Built: %i", kore_pgsql_ntuples(&sql));
+
+  if(kore_pgsql_ntuples(&sql) == 0) {
+     kore_pgsql_cleanup(&sql);
+     if(device_new(device_uuid) != 0) {
+         return -1;
+     }
+     return device_insert(device_uuid, ping);
+  }
+  
+  char insertQuery[150];
+  sprintf(insertQuery, "INSERT INTO ping (time, device_id) VALUES (to_timestamp(%s), '%s')", ping, device_uuid);
+  if (!kore_pgsql_query(&sql, insertQuery)) {
+    kore_pgsql_logerror(&sql);
+    kore_pgsql_cleanup(&sql);
+    return -1;
+  }
+
+  kore_pgsql_cleanup(&sql);
+  return 0;
+}
+
+int device_new(char* device_uuid){
+  struct kore_pgsql sql;
+
+  /* Escape on database error */
+  if (!kore_pgsql_query_init(&sql, NULL, "db", KORE_PGSQL_SYNC)) {
+    kore_pgsql_logerror(&sql);
+    kore_pgsql_cleanup(&sql);
+    return -1;
+  }
+
+  /* Escape on SQL Error */
+  char queryBuilder[80];
+  sprintf(queryBuilder, "INSERT INTO device (id) VALUES ('%s')", device_uuid);
+  kore_log(LOG_NOTICE, "Query: %s", queryBuilder);
+
+  if (!kore_pgsql_query(&sql, queryBuilder)) {
+    kore_pgsql_logerror(&sql);
+    kore_pgsql_cleanup(&sql);
+    return -1;
+  }
+
+  kore_pgsql_cleanup(&sql);
+  return 0;
+}

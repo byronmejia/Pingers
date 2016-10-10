@@ -7,5 +7,7 @@
 #include <kore/pgsql.h>
 
 json_t *device_get_all(void);
+int device_insert(char*, char*);
+int device_new(char*);
 
 #endif /* DEVICE_H */
