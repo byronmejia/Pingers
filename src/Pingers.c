@@ -64,29 +64,69 @@ int get_all_pings_between(struct http_request *req) {
 }
 
 int get_all_pings_on_date(struct http_request *req) {
+  kore_log(LOG_NOTICE, "PATH: %s", req->path);
+  char useless_var[37];
+  int start = 0;
+  int end = 0;
+  char * solution;
+
+  get_uuid_date(req->path, useless_var, &start, &end);
+
+  kore_log(LOG_NOTICE, "EPOCH_S: %s", start);
+  
+  json_t *output = all_pings_between(start, end);
+  if(output == NULL) {
+    req->status = HTTP_STATUS_INTERNAL_ERROR;
+  } else {
+    req->status = HTTP_STATUS_OK; 
+  }
+
+  solution = json_dumps(output, JSON_COMPACT);
+
+
   char *response = "Hello All Pings On Date";
   http_response(req, 200, response, strlen(response));
   return (KORE_RESULT_OK);
 }
 
 int get_device_pings_between(struct http_request *req) {
-  char *response = "Hello Device Pings Between";
-  http_response(req, 200, response, strlen(response));
+  kore_log(LOG_NOTICE, "PATH: %s", req->path);
+  char uuid[37];
+  int start = 0;
+  int end = 0;
+  char * solution;
+
+  get_uuid_date_date(req->path, uuid, &start, &end);
+
+  kore_log(LOG_NOTICE, "UUID:    %s", uuid);
+  kore_log(LOG_NOTICE, "EPOCH_S: %i", start);
+  kore_log(LOG_NOTICE, "EPOCH_E: %i", end);
+
+  json_t *output = device_pings_between(uuid, start, end);
+  if(output == NULL) {
+    req->status = HTTP_STATUS_INTERNAL_ERROR;
+  } else {
+    req->status = HTTP_STATUS_OK; 
+  }
+
+  solution = json_dumps(output, JSON_COMPACT);
+
+  http_response(req, 200, solution, strlen(solution));
   return (KORE_RESULT_OK);
 }
 
 int get_device_pings_on_date(struct http_request *req) {
   kore_log(LOG_NOTICE, "PATH: %s", req->path);
   char uuid[37];
-  char start[20];
-  char end[20];
+  int start = 0;
+  int end = 0;
   char * solution;
 
-  get_uuid_date(req->path, uuid, start, end);
+  get_uuid_date(req->path, uuid, &start, &end);
 
   kore_log(LOG_NOTICE, "UUID:    %s", uuid);
-  kore_log(LOG_NOTICE, "EPOCH_S: %s", start);
-  kore_log(LOG_NOTICE, "EPOCH_E: %s", end);
+  kore_log(LOG_NOTICE, "EPOCH_S: %i", start);
+  kore_log(LOG_NOTICE, "EPOCH_E: %i", end);
 
   json_t *output = device_pings_between(uuid, start, end);
   if(output == NULL) {

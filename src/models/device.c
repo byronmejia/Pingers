@@ -30,7 +30,7 @@ json_t *device_get_all(void) {
   return output;
 }
 
-json_t *device_pings_between(char* device_uuid, char* start, char* end) {
+json_t *device_pings_between(char* device_uuid, int start, int end) {
   json_t *output = json_array();
   struct kore_pgsql	sql;
 
@@ -45,11 +45,11 @@ json_t *device_pings_between(char* device_uuid, char* start, char* end) {
   char queryBuilder[200];
   sprintf(queryBuilder, 
   "\
-  SELECT EXTRACT(epoch FROM time) \
+  SELECT time \
   FROM ping \
   WHERE device_id = '%s' \
-  AND time >= to_timestamp(%s) \
-  AND time < to_timestamp(%s)\
+  AND time >= %i \
+  AND time < %i \
   ", device_uuid, start, end);
 
   kore_log(LOG_NOTICE, "QUERY: %s", queryBuilder);
@@ -105,7 +105,7 @@ int device_insert(char* device_uuid, char* ping){
   }
 
   char insertQuery[150];
-  sprintf(insertQuery, "INSERT INTO ping (time, device_id) VALUES (to_timestamp(%s), '%s')", ping, device_uuid);
+  sprintf(insertQuery, "INSERT INTO ping (time, device_id) VALUES ('%s', '%s')", ping, device_uuid);
   if (!kore_pgsql_query(&sql, insertQuery)) {
     kore_pgsql_logerror(&sql);
     kore_pgsql_cleanup(&sql);
@@ -139,4 +139,48 @@ int device_new(char* device_uuid){
 
   kore_pgsql_cleanup(&sql);
   return 0;
+}
+
+json_t *all_pings_between(int start, int end) {
+  struct kore_pgsql sql;
+  json_t *output = NULL;
+
+  /* Escape on database error */
+  if (!kore_pgsql_query_init(&sql, NULL, "db", KORE_PGSQL_SYNC)) {
+    kore_pgsql_logerror(&sql);
+    kore_pgsql_cleanup(&sql);
+    return NULL;
+  }
+
+  /* Escape on SQL Error */
+  char queryBuilder[200];
+  sprintf(queryBuilder, 
+  "\
+  SELECT EXTRACT(epoch FROM time) \
+  FROM ping \
+  WHERE \
+  time >= %i \
+  AND time < %i \
+  ", start, end);
+
+  kore_log(LOG_NOTICE, "QUERY: %s", queryBuilder);
+
+  if (!kore_pgsql_query(&sql, queryBuilder)) {
+    kore_pgsql_logerror(&sql);
+    kore_pgsql_cleanup(&sql);
+    return NULL;
+  }
+
+  int rows, i;
+  json_t *epochs;
+  json_t *device;
+  char* current_device[37];
+  rows = kore_pgsql_ntuples(&sql);
+
+  for (i = 0; i < rows; i++) {
+    epochs = json_string(kore_pgsql_getvalue(&sql, i, 0));
+    json_array_append(output, epochs);
+  }
+
+  return output;
 }
