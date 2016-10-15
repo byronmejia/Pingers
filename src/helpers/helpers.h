@@ -6,8 +6,8 @@
 #include <time.h>
 
 time_t current_to_GM_hacked_function(struct tm *);
-int epoched(char*, int);
-int get_uuid_date(char*, char*, int*, int*);
-int get_uuid_date_date(char*, char*, int*, int*);
+time_t epoched(char*, int);
+int get_uuid_date(char*, char*, time_t*, time_t*);
+int get_uuid_date_date(char*, char*, time_t*, time_t*);
 
 #endif /* HELPERS_H */

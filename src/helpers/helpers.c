@@ -4,10 +4,10 @@ time_t current_to_GM_hacked_function(struct tm *tm) {
     time_t epoch = 0;
     time_t offset = mktime(gmtime(&epoch));
     time_t utc = mktime(tm);
-    return difftime(utc, offset);
+    return (time_t) difftime(utc, offset);
 }
 
-int epoched(char* date, int days) {
+time_t epoched(char* date, int days) {
   struct tm tm;
   memset(&tm, 0, sizeof(struct tm));
 
@@ -17,7 +17,7 @@ int epoched(char* date, int days) {
   return current_to_GM_hacked_function(&tm);
 }
 
-int get_uuid_date(char* path, char* uuid, int* start, int* end) {
+int get_uuid_date(char* path, char* uuid, time_t* start, time_t* end) {
   const char s[2] = "/";
   
   char * tmp_uuid = strtok(path, s);
@@ -31,7 +31,7 @@ int get_uuid_date(char* path, char* uuid, int* start, int* end) {
   return 0;
 }
 
-int get_uuid_date_date(char* path, char* uuid, int* start, int* finish) {
+int get_uuid_date_date(char* path, char* uuid, time_t* start, time_t* finish) {
   const char slash[2] = "/";
   const char dash = '-';
 

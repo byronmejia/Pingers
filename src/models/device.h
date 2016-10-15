@@ -7,8 +7,8 @@
 #include <kore/pgsql.h>
 
 json_t *device_get_all(void);
-json_t *device_pings_between(char*, int, int);
-json_t *all_pings_between(int, int);
+json_t *device_pings_between(char*, time_t, time_t);
+json_t *all_pings_between(time_t, time_t);
 int device_insert(char*, char*);
 int device_new(char*);
 

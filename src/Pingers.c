@@ -1,4 +1,5 @@
 #include <string.h>
+#include <time.h>
 #include <jansson.h>
 #include <kore/kore.h>
 #include <kore/http.h>
@@ -52,22 +53,37 @@ int get_all_devices(struct http_request *req) {
   }
 
   solution = json_dumps(output, JSON_COMPACT);
-
   http_response(req, req->status, solution, strlen(solution));
   return (KORE_RESULT_OK);
 }
 
 int get_all_pings_between(struct http_request *req) {
-  char *response = "Hello All Pings Between";
-  http_response(req, 200, response, strlen(response));
+  kore_log(LOG_NOTICE, "PATH: %s", req->path);
+  char useless_var[37];
+  time_t start = 0;
+  time_t end = 0;
+  char * solution;
+
+  get_uuid_date_date(req->path, useless_var, &start, &end);
+  
+  json_t *output = all_pings_between(start, end);
+  if(output == NULL) {
+    req->status = HTTP_STATUS_INTERNAL_ERROR;
+  } else {
+    req->status = HTTP_STATUS_OK; 
+  }
+
+  solution = json_dumps(output, JSON_COMPACT);
+
+  http_response(req, 200, solution, strlen(solution));
   return (KORE_RESULT_OK);
 }
 
 int get_all_pings_on_date(struct http_request *req) {
   kore_log(LOG_NOTICE, "PATH: %s", req->path);
   char useless_var[37];
-  int start = 0;
-  int end = 0;
+  time_t start = 0;
+  time_t end = 0;
   char * solution;
 
   get_uuid_date(req->path, useless_var, &start, &end);
@@ -92,8 +108,8 @@ int get_all_pings_on_date(struct http_request *req) {
 int get_device_pings_between(struct http_request *req) {
   kore_log(LOG_NOTICE, "PATH: %s", req->path);
   char uuid[37];
-  int start = 0;
-  int end = 0;
+  time_t start = 0;
+  time_t end = 0;
   char * solution;
 
   get_uuid_date_date(req->path, uuid, &start, &end);
@@ -118,8 +134,8 @@ int get_device_pings_between(struct http_request *req) {
 int get_device_pings_on_date(struct http_request *req) {
   kore_log(LOG_NOTICE, "PATH: %s", req->path);
   char uuid[37];
-  int start = 0;
-  int end = 0;
+  time_t start = 0;
+  time_t end = 0;
   char * solution;
 
   get_uuid_date(req->path, uuid, &start, &end);

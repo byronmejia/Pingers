@@ -30,7 +30,7 @@ json_t *device_get_all(void) {
   return output;
 }
 
-json_t *device_pings_between(char* device_uuid, int start, int end) {
+json_t *device_pings_between(char* device_uuid, time_t start, time_t end) {
   json_t *output = json_array();
   struct kore_pgsql	sql;
 
@@ -48,8 +48,8 @@ json_t *device_pings_between(char* device_uuid, int start, int end) {
   SELECT time \
   FROM ping \
   WHERE device_id = '%s' \
-  AND time >= %i \
-  AND time < %i \
+  AND time >= %li \
+  AND time < %li \
   ", device_uuid, start, end);
 
   kore_log(LOG_NOTICE, "QUERY: %s", queryBuilder);
@@ -65,7 +65,7 @@ json_t *device_pings_between(char* device_uuid, int start, int end) {
   rows = kore_pgsql_ntuples(&sql);
 
   for (i = 0; i < rows; i++) {
-    epochs = json_string(kore_pgsql_getvalue(&sql, i, 0));
+    epochs = json_integer((json_int_t) atoi(kore_pgsql_getvalue(&sql, i, 0)));
     json_array_append(output, epochs);
   }
 
@@ -141,7 +141,7 @@ int device_new(char* device_uuid){
   return 0;
 }
 
-json_t *all_pings_between(int start, int end) {
+json_t *all_pings_between(time_t start, time_t end) {
   struct kore_pgsql sql;
   json_t *output = NULL;
 
@@ -153,14 +153,15 @@ json_t *all_pings_between(int start, int end) {
   }
 
   /* Escape on SQL Error */
-  char queryBuilder[200];
+  char queryBuilder[250];
   sprintf(queryBuilder, 
   "\
-  SELECT EXTRACT(epoch FROM time) \
+  SELECT * \
   FROM ping \
   WHERE \
-  time >= %i \
-  AND time < %i \
+  time >= %li \
+  AND time < %li \
+  ORDER BY device_id \
   ", start, end);
 
   kore_log(LOG_NOTICE, "QUERY: %s", queryBuilder);
@@ -172,15 +173,37 @@ json_t *all_pings_between(int start, int end) {
   }
 
   int rows, i;
-  json_t *epochs;
-  json_t *device;
-  char* current_device[37];
+
+  json_t *current_device_json = NULL;
+  json_t *device_array = NULL;
+  char current_device[37];
+  current_device[0] = '\0';
   rows = kore_pgsql_ntuples(&sql);
 
   for (i = 0; i < rows; i++) {
-    epochs = json_string(kore_pgsql_getvalue(&sql, i, 0));
-    json_array_append(output, epochs);
+    if(strcmp(current_device, kore_pgsql_getvalue(&sql, i, 1)) != 0 ) {
+      if(current_device[0] == '\0') {  
+        output = json_array();    
+      } else {
+        current_device_json = json_object();
+        json_object_set(current_device_json, current_device, device_array);
+        json_array_append(output, current_device_json);
+        current_device_json = NULL;
+      }
+
+      strcpy(current_device, kore_pgsql_getvalue(&sql, i, 1));
+
+      device_array = json_array();
+    }
+
+    json_array_append(device_array, json_integer((json_int_t) atoi(kore_pgsql_getvalue(&sql, i, 0))));
   }
 
+  current_device_json = json_object();
+  json_object_set(current_device_json, current_device, device_array);
+  json_array_append(output, current_device_json);
+  current_device_json = NULL;
+
+  kore_pgsql_cleanup(&sql);
   return output;
 }
