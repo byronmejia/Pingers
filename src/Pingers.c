@@ -59,7 +59,6 @@ int get_all_devices(struct http_request *req) {
 }
 
 int get_all_pings_between(struct http_request *req) {
-  kore_log(LOG_NOTICE, "PATH: %s", req->path);
   char useless_var[37];
   time_t start = 0;
   time_t end = 0;
@@ -81,15 +80,12 @@ int get_all_pings_between(struct http_request *req) {
 }
 
 int get_all_pings_on_date(struct http_request *req) {
-  kore_log(LOG_NOTICE, "PATH: %s", req->path);
   char useless_var[37];
   time_t start = 0;
   time_t end = 0;
   char * solution;
 
   get_uuid_date(req->path, useless_var, &start, &end);
-
-  kore_log(LOG_NOTICE, "EPOCH_S: %s", start);
   
   json_t *output = all_pings_between(start, end);
   if(output == NULL) {
@@ -107,17 +103,12 @@ int get_all_pings_on_date(struct http_request *req) {
 }
 
 int get_device_pings_between(struct http_request *req) {
-  kore_log(LOG_NOTICE, "PATH: %s", req->path);
   char uuid[37];
   time_t start = 0;
   time_t end = 0;
   char * solution;
 
   get_uuid_date_date(req->path, uuid, &start, &end);
-
-  kore_log(LOG_NOTICE, "UUID:    %s", uuid);
-  kore_log(LOG_NOTICE, "EPOCH_S: %i", start);
-  kore_log(LOG_NOTICE, "EPOCH_E: %i", end);
 
   json_t *output = device_pings_between(uuid, start, end);
   if(output == NULL) {
@@ -133,17 +124,12 @@ int get_device_pings_between(struct http_request *req) {
 }
 
 int get_device_pings_on_date(struct http_request *req) {
-  kore_log(LOG_NOTICE, "PATH: %s", req->path);
   char uuid[37];
   time_t start = 0;
   time_t end = 0;
   char * solution;
 
   get_uuid_date(req->path, uuid, &start, &end);
-
-  kore_log(LOG_NOTICE, "UUID:    %s", uuid);
-  kore_log(LOG_NOTICE, "EPOCH_S: %i", start);
-  kore_log(LOG_NOTICE, "EPOCH_E: %i", end);
 
   json_t *output = device_pings_between(uuid, start, end);
   if(output == NULL) {
@@ -165,17 +151,12 @@ int post_device_ping(struct http_request *req) {
     return (KORE_RESULT_OK);
   }
 
-  kore_log(LOG_NOTICE, "PATH: %s", req->path);
-
   char * uuid;
   char * ping;
   const char s[2] = "/";
 
   uuid = strtok(req->path, s);
   ping = strtok(NULL, s);
-
-  kore_log(LOG_NOTICE, "UUID: %s", uuid);
-  kore_log(LOG_NOTICE, "PING: %s", ping);
 
   if (device_insert(uuid, ping) != 0) {
     char* response = "Error";

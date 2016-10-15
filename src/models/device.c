@@ -52,8 +52,6 @@ json_t *device_pings_between(char* device_uuid, time_t start, time_t end) {
   AND time < %li \
   ", device_uuid, start, end);
 
-  kore_log(LOG_NOTICE, "QUERY: %s", queryBuilder);
-
   if (!kore_pgsql_query(&sql, queryBuilder)) {
     kore_pgsql_logerror(&sql);
     kore_pgsql_cleanup(&sql);
@@ -86,15 +84,12 @@ int device_insert(char* device_uuid, char* ping){
   /* Escape on SQL Error */
   char queryBuilder[80];
   sprintf(queryBuilder, "SELECT id FROM device WHERE id = '%s'", device_uuid);
-  kore_log(LOG_NOTICE, "Query: %s", queryBuilder);
 
   if (!kore_pgsql_query(&sql, queryBuilder)) {
     kore_pgsql_logerror(&sql);
     kore_pgsql_cleanup(&sql);
     return -1;
   }
-
-  kore_log(LOG_NOTICE, "Built: %i", kore_pgsql_ntuples(&sql));
 
   if(kore_pgsql_ntuples(&sql) == 0) {
      kore_pgsql_cleanup(&sql);
@@ -129,7 +124,6 @@ int device_new(char* device_uuid){
   /* Escape on SQL Error */
   char queryBuilder[80];
   sprintf(queryBuilder, "INSERT INTO device (id) VALUES ('%s')", device_uuid);
-  kore_log(LOG_NOTICE, "Query: %s", queryBuilder);
 
   if (!kore_pgsql_query(&sql, queryBuilder)) {
     kore_pgsql_logerror(&sql);
@@ -163,8 +157,6 @@ json_t *all_pings_between(time_t start, time_t end) {
   AND time < %li \
   ORDER BY device_id \
   ", start, end);
-
-  kore_log(LOG_NOTICE, "QUERY: %s", queryBuilder);
 
   if (!kore_pgsql_query(&sql, queryBuilder)) {
     kore_pgsql_logerror(&sql);
