@@ -9,7 +9,6 @@
 
 int init(int);
 int catch_last_resort(struct http_request *);
-int page(struct http_request *);
 int get_all_devices(struct http_request *);
 int clear_data(struct http_request *);
 int get_all_pings_between(struct http_request *);
@@ -21,12 +20,6 @@ int truncate_database(void);
 
 int init(int state) {
   kore_pgsql_register("db", "host=/tmp dbname=pingers");
-  return (KORE_RESULT_OK);
-}
-
-int page(struct http_request *req) {
-  char *response = "Hello homepage";
-  http_response(req, 200, response, strlen(response));
   return (KORE_RESULT_OK);
 }
 
