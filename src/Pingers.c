@@ -8,6 +8,7 @@
 #include "helpers/helpers.h"
 
 int init(int);
+int catch_last_resort(struct http_request *);
 int page(struct http_request *);
 int get_all_devices(struct http_request *);
 int clear_data(struct http_request *);
@@ -206,4 +207,10 @@ int truncate_database(){
 
   kore_pgsql_cleanup(&sql);
   return 0;
+}
+
+int catch_last_resort(struct http_request *req) {
+  char *response = "{}";
+  http_response(req, 200, response, strlen(response));
+  return (KORE_RESULT_OK);
 }

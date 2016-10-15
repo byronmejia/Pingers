@@ -173,8 +173,6 @@ json_t *all_pings_between(time_t start, time_t end) {
   }
 
   int rows, i;
-
-  json_t *current_device_json = NULL;
   json_t *device_array = NULL;
   char current_device[37];
   current_device[0] = '\0';
@@ -183,26 +181,17 @@ json_t *all_pings_between(time_t start, time_t end) {
   for (i = 0; i < rows; i++) {
     if(strcmp(current_device, kore_pgsql_getvalue(&sql, i, 1)) != 0 ) {
       if(current_device[0] == '\0') {  
-        output = json_array();    
+        output = json_object();    
       } else {
-        current_device_json = json_object();
-        json_object_set(current_device_json, current_device, device_array);
-        json_array_append(output, current_device_json);
-        current_device_json = NULL;
+        json_object_set(output, current_device, device_array);
       }
-
       strcpy(current_device, kore_pgsql_getvalue(&sql, i, 1));
-
       device_array = json_array();
     }
 
     json_array_append(device_array, json_integer((json_int_t) atoi(kore_pgsql_getvalue(&sql, i, 0))));
   }
-
-  current_device_json = json_object();
-  json_object_set(current_device_json, current_device, device_array);
-  json_array_append(output, current_device_json);
-  current_device_json = NULL;
+  json_object_set(output, current_device, device_array);
 
   kore_pgsql_cleanup(&sql);
   return output;
